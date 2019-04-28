@@ -1,10 +1,7 @@
-import boto3
-from botocore.exceptions import ClientError
-from multiprocessing.dummy import Pool as ThreadPool
-import sys,random,time
+import sys,random,time,os
 import csv,json
 import logging
-from time import time
+from time import gmtime, strftime
 
 class datagen:
 
@@ -12,33 +9,16 @@ class datagen:
         pass
 
     def generate_row(self,num_columns):
-        row = ''.join(['{},'.format(random.randint(0,9)) 
-                        for i in range(num_columns)])
-        return row[:-1]+'\n'
+        return ('{},'.format(random.randint(0,9)) for i in range(num_columns))
 
     def generate_column(self,num_rows,num_columns):
-        columns = ''.join([self.generate_row(num_columns) 
-                        for i in range(num_rows)])
-        return columns
-
-    def rows_json(self,num_colums):
-        result = {}
-        for i in range(num_colums):
-            result['_{}{}'.format(i,time.clock())]= str(random.randint(0,9))
-        return result
-
-    def columns_json(self,num_colums,num_rows):
-        result = {}
-        for i in range(num_rows):
-            result["_"+str(i)]= rows_json(num_colums)
-        print(json.dumps(result,indent=2))
-        return result
+        return (self.generate_row(num_columns) for i in range(num_rows))
 
 if __name__ == "__main__":
-    #from runner import runner
-    #runner = runner()
+
     data = datagen()
-    with open("data/{}.csv".format(str(random.randint(0,9)+time())), "a") as myfile:
-        myfile.write(data.generate_column(int(sys.argv[1]),int(sys.argv[2])))
-    
-    #runner.run(sys.argv[1:len(sys.argv)],num_tasks=2,)
+    os.makedirs("data", exist_ok=True)
+    with open("data/{}.csv".format(strftime("%Y-%m-%d-%H-%M-%S", gmtime())), "a") as _:
+        column_generator = data.generate_column(int(sys.argv[1]),int(sys.argv[2]))
+        for line in column_generator:
+            _.write(''.join(line))
